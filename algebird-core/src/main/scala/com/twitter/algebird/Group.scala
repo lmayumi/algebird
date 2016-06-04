@@ -15,7 +15,7 @@ limitations under the License.
 */
 package com.twitter.algebird
 
-import algebra.{ Group => AGroup }
+import cats.kernel.{ Group => CatsGroup }
 import java.lang.{ Integer => JInt, Short => JShort, Long => JLong, Float => JFloat, Double => JDouble, Boolean => JBool }
 import java.util.{ List => JList, Map => JMap }
 
@@ -29,7 +29,7 @@ import scala.math.Equiv
  */
 
 @implicitNotFound(msg = "Cannot find Group type class for ${T}")
-trait Group[@specialized(Int, Long, Float, Double) T] extends AGroup[T] with Monoid[T] {
+trait Group[@specialized(Int, Long, Float, Double) T] extends CatsGroup[T] with Monoid[T] {
   // must override negate or minus (or both)
   def negate(v: T): T = minus(zero, v)
   def minus(l: T, r: T): T = plus(l, negate(r))
@@ -86,16 +86,16 @@ class ArrayGroup[T: ClassTag](implicit grp: Group[T])
   }.toArray
 }
 
-class FromAlgebraGroup[T](m: AGroup[T]) extends FromAlgebraMonoid(m) with Group[T] {
+class FromCatsGroup[T](m: CatsGroup[T]) extends FromCatsMonoid(m) with Group[T] {
   override def negate(t: T): T = m.inverse(t)
   override def minus(r: T, l: T): T = m.remove(r, l)
 }
 
-trait FromAlgebraGroupImplicit {
-  implicit def fromAlgebraGroup[T](m: AGroup[T]): Group[T] = new FromAlgebraGroup(m)
+trait FromCatsGroupImplicit {
+  implicit def fromAlgebraGroup[T](m: CatsGroup[T]): Group[T] = new FromCatsGroup(m)
 }
 
-object Group extends GeneratedGroupImplicits with ProductGroups with FromAlgebraGroupImplicit {
+object Group extends GeneratedGroupImplicits with ProductGroups with FromCatsGroupImplicit {
   // This pattern is really useful for typeclasses
   def negate[T](x: T)(implicit grp: Group[T]) = grp.negate(x)
   def minus[T](l: T, r: T)(implicit grp: Group[T]) = grp.minus(l, r)

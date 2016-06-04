@@ -15,7 +15,7 @@ limitations under the License.
 */
 package com.twitter.algebird
 
-import algebra.{ Semigroup => ASemigroup }
+import cats.kernel.{ Semigroup => CatsSemigroup }
 import java.lang.{ Integer => JInt, Short => JShort, Long => JLong, Float => JFloat, Double => JDouble, Boolean => JBool }
 import java.util.{ List => JList, Map => JMap }
 
@@ -30,7 +30,7 @@ import macros.caseclass._
  *   This is a class with a plus method that is associative: a+(b+c) = (a+b)+c
  */
 @implicitNotFound(msg = "Cannot find Semigroup type class for ${T}")
-trait Semigroup[@specialized(Int, Long, Float, Double) T] extends ASemigroup[T] {
+trait Semigroup[@specialized(Int, Long, Float, Double) T] extends CatsSemigroup[T] {
   def plus(l: T, r: T): T
   /**
    * override this if there is a faster way to do this sum than reduceLeftOption on plus
@@ -74,7 +74,7 @@ class EitherSemigroup[L, R](implicit semigroupl: Semigroup[L], semigroupr: Semig
   }
 }
 
-class FromAlgebraSemigroup[T](sg: ASemigroup[T]) extends Semigroup[T] {
+class FromCatsSemigroup[T](sg: CatsSemigroup[T]) extends Semigroup[T] {
   override def plus(l: T, r: T): T = sg.combine(l, r)
   override def sumOption(ts: TraversableOnce[T]): Option[T] = sg.combineAllOption(ts)
 }
@@ -82,12 +82,12 @@ class FromAlgebraSemigroup[T](sg: ASemigroup[T]) extends Semigroup[T] {
 /**
  * An Algebra semigroup can be an Algebird semigroup
  */
-trait FromAlgebraSemigroupImplicit {
-  implicit def fromAlgebraSemigroup[T](implicit sg: ASemigroup[T]): Semigroup[T] =
-    new FromAlgebraSemigroup(sg)
+trait FromCatsSemigroupImplicit {
+  implicit def fromAlgebraSemigroup[T](implicit sg: CatsSemigroup[T]): Semigroup[T] =
+    new FromCatsSemigroup(sg)
 }
 
-object Semigroup extends GeneratedSemigroupImplicits with ProductSemigroups with FromAlgebraSemigroupImplicit {
+object Semigroup extends GeneratedSemigroupImplicits with ProductSemigroups with FromCatsSemigroupImplicit {
   // This pattern is really useful for typeclasses
   def plus[T](l: T, r: T)(implicit semi: Semigroup[T]) = semi.plus(l, r)
   // Left sum: (((a + b) + c) + d)
